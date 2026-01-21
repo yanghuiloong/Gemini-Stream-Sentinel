@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Gemini Stream Sentinel",
+  "version": "1.2",
+  "description": "Monitor Gemini response completion in the background and notify with sound and popup. 后台监控 Gemini 回答进度，完成后发送弹窗提示。",
+  "permissions": [
+    "notifications",
+    "activeTab",
+    "offscreen"
+  ],
+  "host_permissions": [
+    "https://gemini.google.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://gemini.google.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["alert.mp3"],
+      "matches": ["https://gemini.google.com/*"]
+    }
+  ],
+  "action": {
+    "default_icon": {
+      "16": "icons/icon128.png",
+      "48": "icons/icon128.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon128.png",
+    "48": "icons/icon128.png",
+    "128": "icons/icon128.png"
+  }
+}
