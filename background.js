@@ -3,19 +3,26 @@ console.log('Gemini Stream Sentinel background loaded.');
 
 // 1. 负责创建离屏文档并播放声音的函数
 async function playSoundViaOffscreen() {
-  const existingContexts = await chrome.runtime.getContexts({
-    contextTypes: ['OFFSCREEN_DOCUMENT'],
-  });
-
-  if (existingContexts.length === 0) {
-    await chrome.offscreen.createDocument({
-      url: 'offscreen.html',
-      reasons: ['AUDIO_PLAYBACK'],
-      justification: 'Notification sound',
+  try {
+    const existingContexts = await chrome.runtime.getContexts({
+      contextTypes: ['OFFSCREEN_DOCUMENT'],
     });
-  }
 
-  chrome.runtime.sendMessage({ action: 'play_audio' });
+    if (existingContexts.length === 0) {
+      await chrome.offscreen.createDocument({
+        url: 'offscreen.html',
+        reasons: ['AUDIO_PLAYBACK'],
+        justification: 'Notification sound',
+      });
+    }
+
+    // 尝试发送消息，并捕获可能的连接错误
+    chrome.runtime.sendMessage({ action: 'play_audio' }).catch((error) => {
+      console.warn('Failed to send play_audio message:', error);
+    });
+  } catch (e) {
+    console.error('Failed to create or use offscreen document:', e);
+  }
 }
 
 // 2. 监听消息
@@ -23,24 +30,29 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "gemini_finished") {
     
     // 播放自定义声音
-    playSoundViaOffscreen();
+    playSoundViaOffscreen().catch(err => console.error(err));
 
     // 准备通知 ID
     const targetTabId = sender.tab ? sender.tab.id : null;
     const notificationId = targetTabId ? `gemini_done_${targetTabId}` : 'gemini_done_general';
 
-    // 创建通知
-    chrome.notifications.create(notificationId, {
-      type: 'basic',
-      iconUrl: 'icons/icon128.png',
-      title: 'Gemini 回答完成',
-      message: '点击立即切换回对话',
-      priority: 2,
-      requireInteraction: true,
-      
-      // 【关键修复：Agent 的建议】
-      // 禁止系统默认的通知音，避免和 alert.mp3 重叠
-      silent: true 
+    // 创建通知逻辑优化：强制清除旧通知以确保弹窗 (Re-toast)
+    // 即使全屏模式下系统收纳了通知，这里先 clear 再 create 可以确保通知状态是最新的
+    // 并且有助于解决“僵尸通知”导致的后续不弹窗问题
+    chrome.notifications.clear(notificationId, (wasCleared) => {
+      try {
+        chrome.notifications.create(notificationId, {
+          type: 'basic',
+          iconUrl: 'icons/icon128.png',
+          title: 'Gemini 回答完成',
+          message: '点击立即切换回对话',
+          priority: 2,
+          requireInteraction: true, // 保持通知不消失，直到用户交互
+          silent: true // 保持静音，使用自定义声音
+        });
+      } catch (e) {
+        console.error('Failed to create notification:', e);
+      }
     });
   }
 });

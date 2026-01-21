@@ -22,8 +22,12 @@ function triggerNotification(entry) {
   if (document.hidden === true) {
     console.log('Gemini Stream Sentinel: Triggering Notification for', entry.name);
     
-    // 【注意】这里不再调用 playSound()，只负责发信号
+    // 【关键修复】发送前检查扩展上下文是否有效
     try {
+      if (typeof chrome.runtime === 'undefined' || !chrome.runtime.sendMessage) {
+        throw new Error('Extension context invalidated');
+      }
+
       chrome.runtime.sendMessage({
         action: "gemini_finished",
         data: {
@@ -32,7 +36,16 @@ function triggerNotification(entry) {
         }
       });
     } catch (e) {
-      console.warn('Failed to send message to background:', e);
+      // 捕获上下文失效错误，给出友好提示
+      const isContextInvalidated = e.message === 'Extension context invalidated' || 
+                                   (e.message && e.message.includes('Extension context invalidated')) ||
+                                   (e.message && e.message.includes('Invocation of form runtime.connect(null, ) failed'));
+
+      if (isContextInvalidated) {
+        console.log('%cGemini Stream Sentinel: Extension updated or reloaded. Please refresh the page to reconnect.', 'color: #ff9800; font-weight: bold;');
+      } else {
+        console.warn('Failed to send message to background:', e);
+      }
     }
   } else {
     console.log('Gemini Stream Sentinel: Request finished but page is visible. Ignoring.');
