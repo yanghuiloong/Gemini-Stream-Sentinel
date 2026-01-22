@@ -18,9 +18,12 @@ let debounceTimer = null;
  * 触发通知逻辑
  */
 function triggerNotification(entry) {
-  // 只有当页面在后台时才通知
-  if (document.hidden === true) {
-    console.log('Gemini Stream Sentinel: Triggering Notification for', entry.name);
+  // 综合判断：页面不可见 (Tab切换/最小化) OR 页面失去焦点 (用户在使用其他App)
+  const isHidden = document.hidden === true;
+  const isBlur = document.hasFocus() === false;
+
+  if (isHidden || isBlur) {
+    console.log(`Gemini Stream Sentinel: Triggering Notification. (Hidden: ${isHidden}, Blur: ${isBlur})`, entry.name);
     
     // 【关键修复】发送前检查扩展上下文是否有效
     try {
@@ -48,7 +51,7 @@ function triggerNotification(entry) {
       }
     }
   } else {
-    console.log('Gemini Stream Sentinel: Request finished but page is visible. Ignoring.');
+    console.log('Gemini Stream Sentinel: Request finished but page is visible and focused. Ignoring.');
   }
 }
 
