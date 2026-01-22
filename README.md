@@ -1,6 +1,6 @@
 # Gemini Stream Sentinel
 
-Gemini Stream Sentinel 是一款基于 Chrome Manifest V3 架构开发的浏览器扩展程序。它旨在解决用户在使用 Google Gemini 网页版时，在Gemini深度思考时后台监控 Gemini 回答进度，完成后发送弹窗提示。用户期间可以离开标签页，回答完成后一键返回
+Gemini Stream Sentinel 是一款基于 Chrome Manifest V3 架构开发的浏览器扩展程序。用户在使用 Google Gemini 网页版时，在Gemini深度思考时后台监控 Gemini 回答进度，完成后发送弹窗提示。用户期间可以离开标签页，回答完成后一键返回
 # ✨ 核心功能
 
 *   **智能流式监听**：利用 `PerformanceObserver` API 精准识别 Gemini 的 `StreamGenerate` 核心数据流，而非依赖不稳定的 DOM 轮询。
